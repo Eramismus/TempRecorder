@@ -112,11 +112,11 @@ def main_loop(RUNNING):
                 GPIO.output(led_list[x], GPIO.HIGH)
           
             # Part to write into csv
-            if int(systime.minute) == systimemin_prev + 1: # Do this at defined intervals
+            if int(systime.minute) == (systimemin_prev + 1): # Do this at defined intervals
                 # Update the systime_prev to prepare for the next loop
                 tempdata = {} # clear the old reading
-		if systimemin_prev == 59: #If 59th minute set to start again from zero
-			systimemin_prev = -1
+		if int(systime.minute) == 59: # If 59th minute set to start again from zero
+			systimemin_prev = int(-1)
 		else:
 			systimemin_prev = int(systime.minute) # Normal update
                 tempdata[systime] = t
@@ -151,6 +151,10 @@ except KeyboardInterrupt:
     RUNNING = False
     print("\Quitting")
         
+        
+        
+
+ 
 # Actions under 'finally' will always be called
 # regardless of what stopped the program
 finally:
