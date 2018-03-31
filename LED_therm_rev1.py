@@ -19,6 +19,7 @@ b_pin = 22
 
 # Initialize a dictionary for data collection
 tempdata = {}
+t_list = [] # list for temperature readings to calculate averages
 
 # Filename for the csv-file
 fileid = 1 # ID-number for csv files
@@ -87,10 +88,11 @@ def main_loop(RUNNING):
             # Update system time
             systime=dt.datetime.now()
             # Get the thermistor temperature
-            t = temperature_reading(resistance_reading())
+			t = temperature_reading(resistance_reading())
+            t_list = t_list.append(t)
             # Print temperature values in real time
             print(systime)
-	    print("Temp   " +str(t))
+			print("Temp   " +str(t))
             
             # Turn off LEDs
             for x in range(0,8):
@@ -102,10 +104,10 @@ def main_loop(RUNNING):
                 t_led = temp_low
             if t >= temp_high:
                 t_led = temp_high
-	    else:
-		t_led = t
-     
-            num_leds = int(round(((t_led-temp_low) / (temp_high-temp_low))*8))
+			else:
+				t_led = t    
+		
+			num_leds = int(round(((t_led-temp_low) / (temp_high-temp_low))*8))
      
             # Turn LEDs on
             for x in range(0,num_leds):
@@ -115,24 +117,27 @@ def main_loop(RUNNING):
             if int(systime.minute) == (systimemin_prev + 1): # Do this at defined intervals
                 # Update the systime_prev to prepare for the next loop
                 tempdata = {} # clear the old reading
-		if int(systime.minute) == 59: # If 59th minute set to start again from zero
-			systimemin_prev = int(-1)
-		else:
-			systimemin_prev = int(systime.minute) # Normal update
-                tempdata[systime] = t
-                df = pd.DataFrame.from_dict(tempdata,orient='index') 
-                df.index.name = "Time" # Define the index as time
-                if k == 0:
-                    df.to_csv(filename) # create a new file
-                    k = 1 # set to 1 after the file has been created
-                else:
-		    print("---Recorded---")
-                    df.to_csv(filename, mode='a', header=False) # Append the current file
+				if int(systime.minute) == 59: # If 59th minute set to start again from zero
+					systimemin_prev = int(-1)
+				else:
+					systimemin_prev = int(systime.minute) # Normal update
+				
+				tempdata[systime] = sum(t_list)/len(t_list) # average of the recorded temperature within last minute
+				df = pd.DataFrame.from_dict(tempdata,orient='index') 
+				df.index.name = "Time" # Define the index as time
+				if k == 0:
+					df.to_csv(filename) # create a new file
+					t_list = [] #Empty the list
+					k = 1 # set to 1 after the file has been created
+				else:
+					print("---Recorded---")
+					df.to_csv(filename, mode='a', header=False) # Append the current file
+					t_list = [] #Empty the list
             
             # Time interval for taking readings in seconds and printing
-            time.sleep(10)
+            time.sleep(15)
             
-        # If CTRL+C is pressed the main loop is broken
+    # If CTRL+C is pressed the main loop is broken
     except KeyboardInterrupt:
         RUNNING = False
         print("\Quitting")
